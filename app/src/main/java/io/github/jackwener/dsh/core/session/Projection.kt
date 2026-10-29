@@ -438,3 +438,20 @@ data class TrajTurn(val key: String, val number: Int?, val records: List<TrajRec
 data class Trajectory(val turns: List<TrajTurn>, val start: Long, val end: Long, val usage: Usage) {
     val records: List<TrajRecord> get() = turns.flatMap { it.records }
 }
+
+/**
+ * Live output rate of the running turn, in estimated tokens per second, for the composer chip.
+ *
+ * dsh only reports exact counts when a model call settles, so this estimates from the streamed text
+ * (≈3.5 characters per token in mixed Latin/Cyrillic text) over the time the turn has been running.
+ * Null while idle or too early to be meaningful.
+ */
+fun Conversation.liveTps(now: Long): Double? {
+    val turn = turns.lastOrNull()?.takeIf { it.status == TurnStatus.Running } ?: return null
+    val seconds = (now - turn.startTime) / 1000.0
+    if (seconds < 2.0) return null
+    var chars = 0
+    for (block in turn.blocks) if (block is Block.Text) chars += block.text.length
+    if (chars < 12) return null
+    return chars / 3.5 / seconds
+}
