@@ -136,6 +136,16 @@ open class ConversationController(
 
     fun inspect(callId: String) { view.value = SessionView.Trajectory; focusRecord.value = "k$callId" }
 
+    private val _translations = MutableStateFlow<Map<String, String>>(emptyMap())
+    /** Machine translations of reasoning rows, keyed by block key. */
+    val translations: StateFlow<Map<String, String>> = _translations
+
+    fun translateReasoning(key: String, text: String, targetLanguage: String) = viewModelScope.launch {
+        if (text.isBlank() || _translations.value.containsKey(key)) return@launch
+        val translated = store.translateReasoning(sessionId.value, text, targetLanguage) ?: return@launch
+        _translations.value = _translations.value + (key to translated)
+    }
+
     override fun onCleared() { store.setViewing(this, null) }
 }
 
