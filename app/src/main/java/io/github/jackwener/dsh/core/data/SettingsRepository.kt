@@ -55,7 +55,7 @@ data class Settings(
     val sessionTokenLimit: Long = 0,
     val theme: ThemeMode = ThemeMode.System,
     val workDetails: WorkDetails = WorkDetails.Standard,
-    val busySend: BusySend = BusySend.Queue,
+    val busySend: BusySend = BusySend.Steer,
     val defaultPreset: PermissionPreset = PermissionPreset.Full,
     /** 允许其他 App 调用: whether the exported RUN_TASK entry accepts tasks from other apps. Off by default. */
     val allowExternalApps: Boolean = false,
