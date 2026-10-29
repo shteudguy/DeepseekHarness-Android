@@ -616,4 +616,5 @@
     <string name="web_search_needs_key">Нужен ключ API DeepSeek</string>
     <string name="web_search_off_desc">Выбрана сторонняя модель. Веб-поиск предоставляет DeepSeek, для него нужен ключ API DeepSeek; чтение веб-страниц работает.</string>
     <string name="rule_missing">Эта автоматизация больше не существует</string>
+    <string name="translate_thinking">Перевести</string>
 </resources>
