@@ -192,6 +192,8 @@ fun Composer(
     onModel: (String, String) -> Unit,
     onEffort: (Effort) -> Unit,
     contextTokens: Long,
+    /** Live output rate of the running turn (tok/s), shown left of the context ring; null when idle. */
+    liveTps: Double? = null,
     onSend: () -> Unit,
     onStop: () -> Unit,
     modifier: Modifier = Modifier,
@@ -313,6 +315,7 @@ fun Composer(
             }
             // The context ring and model chip take only the space left, so Send always stays on screen.
             Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.End)) {
+            if (showChips && liveTps != null) Text("${liveTps.toInt()} tok/s", style = DshType.xs13, color = c.labelTertiary, maxLines = 1)
             if (showChips && contextTokens > 0) ContextRing(contextTokens, model.contextWindow)
             if (showChips) Box(Modifier.weight(1f, fill = false)) {
                 // Third-party models have no effort selector (the model family's default level applies).
