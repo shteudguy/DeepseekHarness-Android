@@ -126,7 +126,7 @@ fun resolveChoice(provider: String, model: String, providers: List<ProviderConfi
  * @param webSearch false turns off the `web_search` tool (it needs a DeepSeek credential: the
  *   API key, or the account login only while the conversation uses the account route).
  */
-fun renderProfilePatch(providers: List<ProviderConfig>, webSearch: Boolean): String {
+fun renderProfilePatch(providers: List<ProviderConfig>, webSearch: Boolean, sessionSearchDb: String? = null): String {
     val active = providers.filter { it.enabled && it.models.isNotEmpty() && it.baseUrl.isNotBlank() }
     val json = Json { prettyPrint = false }
     val sb = StringBuilder()
@@ -178,6 +178,27 @@ fun renderProfilePatch(providers: List<ProviderConfig>, webSearch: Boolean): Str
             "        targetLanguage: auto\n"
     )
 
+    // Full-text search over past sessions. dsh ships it opt-in (`openAt: never`) because the web
+    // sidebar search is title-only; on a phone the whole history is the only workspace, so mount the
+    // tool with a durable index under DSH_HOME/android (built lazily on the first search).
+    if (sessionSearchDb != null) {
+        sb.append("- insert:\n")
+        sb.append("    - id: optional-session-search\n")
+        sb.append("      name: cordis:group\n")
+        sb.append("      group: true\n")
+        sb.append("      isolate:\n")
+        sb.append("        sessionQuery: true\n")
+        sb.append("      config:\n")
+        sb.append("        - id: optional-session-query-sqlite\n")
+        sb.append("          name: '@deepseek-ai/dsh-session-query-sqlite'\n")
+        sb.append("          config:\n")
+        sb.append("            path: '").append(sessionSearchDb).append("'\n")
+        sb.append("            openAt: first-search\n")
+        sb.append("        - id: optional-tool-session-query\n")
+        sb.append("          name: '@deepseek-ai/dsh-tool-session-query'\n")
+    }
+    // Session titles written by the model instead of the first five words (dsh-sdk-app disables the row).
+    sb.append("- id: session-title-llm\n  disabled: false\n")
     return sb.toString()
 }
 
