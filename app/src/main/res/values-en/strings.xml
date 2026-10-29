@@ -616,4 +616,5 @@
     <string name="web_search_needs_key">Needs a DeepSeek API key</string>
     <string name="web_search_off_desc">A third-party model is selected. Web search is provided by DeepSeek and needs a DeepSeek API key; reading web pages still works.</string>
     <string name="rule_missing">This automation no longer exists</string>
+    <string name="translate_thinking">Translate</string>
 </resources>
