@@ -205,7 +205,7 @@ class SessionStore @Inject constructor(
             mutate(sessionId) { it.copy(queue = it.queue + QueuedMessage(UUID.randomUUID().toString(), text)) }
             return
         }
-        prompt(sessionId, text, images = images)
+        prompt(sessionId, text, images = images, steer = now && live.running)
     }
 
     fun removeQueued(sessionId: String, id: String) = scope.launch { mutate(sessionId) { s -> s.copy(queue = s.queue.filterNot { it.id == id }) } }
@@ -221,7 +221,7 @@ class SessionStore @Inject constructor(
      * engine problems: a failure becomes an `app/error` record in the log (shown as a failed
      * turn with a retry affordance) and the session goes back to idle.
      */
-    suspend fun prompt(sessionId: String, text: String, ruleId: Long? = null, images: List<Pair<String, String>> = emptyList()) {
+    suspend fun prompt(sessionId: String, text: String, ruleId: Long? = null, images: List<Pair<String, String>> = emptyList(), steer: Boolean = false) {
         val now = System.currentTimeMillis()
         val existing = dao.get(sessionId)
         val live = flowOf(sessionId).value
@@ -252,6 +252,8 @@ class SessionStore @Inject constructor(
             sendPreset(sdk, sessionId, flowOf(sessionId).value.preset)
             sdk.request("session/prompt", buildJsonObject {
                 put("sessionId", sessionId)
+                // dsh: "steer" injects the message into the running turn; without it the prompt waits as a follow-up.
+                if (steer) put("mode", "steer")
                 putJsonArray("contentBlocks") {
                     addJsonObject { put("type", "text"); put("text", text) }
                     images.forEach { (mime, data) -> addJsonObject { put("type", "image"); put("mimeType", mime); put("data", data) } }
