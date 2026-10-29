@@ -449,9 +449,16 @@ data class Trajectory(val turns: List<TrajTurn>, val start: Long, val end: Long,
 fun Conversation.liveTps(now: Long): Double? {
     val turn = turns.lastOrNull()?.takeIf { it.status == TurnStatus.Running } ?: return null
     val seconds = (now - turn.startTime) / 1000.0
-    if (seconds < 2.0) return null
+    if (seconds < 1.0) return null
     var chars = 0
-    for (block in turn.blocks) if (block is Block.Text) chars += block.text.length
-    if (chars < 12) return null
+    for (block in turn.blocks) {
+        // Reasoning streams before any reply text arrives, so it counts towards the rate as well.
+        chars += when (block) {
+            is Block.Text -> block.text.length
+            is Block.Reasoning -> block.text.length
+            else -> 0
+        }
+    }
+    if (chars < 8) return null
     return chars / 3.5 / seconds
 }
