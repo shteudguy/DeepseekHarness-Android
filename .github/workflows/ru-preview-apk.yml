@@ -50,6 +50,22 @@ jobs:
           echo '--- android platforms in repo ---'
           "$SDKM" --list 2>/dev/null | grep 'platforms;android-3' | tail -25 || true
 
+      # One stable preview key: without it every run signs with a fresh debug key and the APK can
+      # only be installed after uninstalling the previous build.
+      - name: Restore preview signing key
+        uses: actions/cache@v4
+        with:
+          path: dsh-preview.keystore
+          key: dsh-preview-keystore-v1
+
+      - name: Create preview signing key if absent
+        run: |
+          if [ ! -f dsh-preview.keystore ]; then
+            keytool -genkeypair -keystore dsh-preview.keystore -storepass dshpreview \
+              -keypass dshpreview -alias preview -keyalg RSA -keysize 2048 \
+              -validity 10000 -dname "CN=DSH RU preview, O=DSH, C=RU"
+          fi
+
       # libnode.so + JNI wrapper + addons come from this repo's "native-*" release (public, pinned by hash).
       - name: Prebuilt native libraries
         run: WORK="$PWD/toolchains" native/prebuilt.sh fetch
@@ -58,24 +74,22 @@ jobs:
       - name: Engine bundle
         run: OUT_DIR="$PWD/toolchains/out/engine" js/build-engine.sh
 
-      # A fresh debug keystore per run would change the app signature and force an uninstall
-      # between builds; caching it keeps in-place updates working.
-      - name: Persist debug keystore
-        uses: actions/cache@v4
-        with:
-          path: ~/.android/debug.keystore
-          key: dsh-ru-debug-keystore-v1
+      # Signed with the cached preview key, so later builds install over this one.
 
       - name: Build APK
         run: |
-          ./gradlew :app:assembleDebug --stacktrace --no-configuration-cache \
+          ./gradlew :app:assembleRelease --stacktrace --no-configuration-cache \
             -Pdsh.nativeOut="$PWD/toolchains/out/jniLibs" \
             -Pdsh.engineOut="$PWD/toolchains/out/engine" \
             -Pdsh.appIdSuffix=ru \
-            -Pdsh.versionNameSuffix=ru
+            -Pdsh.versionNameSuffix=ru \
+            -Pdsh.signing.storeFile="$PWD/dsh-preview.keystore" \
+            -Pdsh.signing.storePassword=dshpreview \
+            -Pdsh.signing.keyAlias=preview \
+            -Pdsh.signing.keyPassword=dshpreview
 
       - uses: actions/upload-artifact@v4
         with:
-          name: dsh-ru-debug-apk
-          path: app/build/outputs/apk/debug/*.apk
+          name: dsh-ru-apk
+          path: app/build/outputs/apk/release/*.apk
           if-no-files-found: error
