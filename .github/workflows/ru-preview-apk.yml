@@ -1,0 +1,95 @@
+# Builds an installable APK with the Russian resources (values-ru) and the TPS chip.
+#
+# Why this exists: the engine bundle and the native libraries are prebuilt artefacts, and a locally
+# built APK is signed with a different key than the release, so it cannot update the installed app.
+# This job builds a *debug* APK with `-Pdsh.appIdSuffix=ru`, i.e. package io.github.jackwener.dsh.ru,
+# which installs next to the store build instead of replacing it.
+name: RU preview APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ['ru/**', 'l10n/**']
+
+concurrency:
+  group: ru-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      # The runner image already ships the Android SDK; android-actions/setup-android is broken with the
+      # current repository (it still tries `sdkmanager tools`), so packages are installed directly.
+      - name: Android SDK packages
+        run: |
+          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
+          echo "SDK=$SDK"; ls "$SDK" || true
+          SDKM=$(ls "$SDK"/cmdline-tools/*/bin/sdkmanager 2>/dev/null | head -1)
+          echo "sdkmanager=$SDKM"
+          yes | "$SDKM" --licenses >/dev/null 2>&1 || true
+          for pkg in "platforms;android-37.2" "platforms;android-37" \
+                     "build-tools;37.0.0" "build-tools;36.1.0" "build-tools;36.0.0" "platform-tools"; do
+            if "$SDKM" --install "$pkg" >/dev/null 2>&1; then echo "installed $pkg"; else echo "unavailable: $pkg"; fi
+          done
+          echo '--- installed ---'; "$SDKM" --list_installed || true
+          echo '--- android platforms in repo ---'
+          "$SDKM" --list 2>/dev/null | grep 'platforms;android-3' | tail -25 || true
+
+      # One stable preview key: without it every run signs with a fresh debug key and the APK can
+      # only be installed after uninstalling the previous build.
+      - name: Restore preview signing key
+        uses: actions/cache@v4
+        with:
+          path: dsh-preview.keystore
+          key: dsh-preview-keystore-v1
+
+      - name: Create preview signing key if absent
+        run: |
+          if [ ! -f dsh-preview.keystore ]; then
+            keytool -genkeypair -keystore dsh-preview.keystore -storepass dshpreview \
+              -keypass dshpreview -alias preview -keyalg RSA -keysize 2048 \
+              -validity 10000 -dname "CN=DSH RU preview, O=DSH, C=RU"
+          fi
+
+      # libnode.so + JNI wrapper + addons come from this repo's "native-*" release (public, pinned by hash).
+      - name: Prebuilt native libraries
+        run: WORK="$PWD/toolchains" native/prebuilt.sh fetch
+
+      # engine.zip: npm install of the pinned @deepseek-ai/dsh + our patches.
+      - name: Engine bundle
+        run: OUT_DIR="$PWD/toolchains/out/engine" js/build-engine.sh
+
+      # Signed with the cached preview key, so later builds install over this one.
+
+      - name: Build APK
+        run: |
+          ./gradlew :app:assembleRelease --stacktrace --no-configuration-cache \
+            -Pdsh.nativeOut="$PWD/toolchains/out/jniLibs" \
+            -Pdsh.engineOut="$PWD/toolchains/out/engine" \
+            -Pdsh.appIdSuffix=ru \
+            -Pdsh.versionNameSuffix=ru \
+            -Pdsh.signing.storeFile="$PWD/dsh-preview.keystore" \
+            -Pdsh.signing.storePassword=dshpreview \
+            -Pdsh.signing.keyAlias=preview \
+            -Pdsh.signing.keyPassword=dshpreview
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dsh-ru-apk
+          path: app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
