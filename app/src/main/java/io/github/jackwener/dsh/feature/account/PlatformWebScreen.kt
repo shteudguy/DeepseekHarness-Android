@@ -149,7 +149,6 @@ private fun platformWebView(
 ): WebView = WebView(context).apply {
     layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
     setBackgroundColor(background)
-    val platformHost = Uri.parse(page.url).host
     with(settings) {
         javaScriptEnabled = true
         domStorageEnabled = true
@@ -170,13 +169,11 @@ private fun platformWebView(
     fun route(uri: Uri, redirect: Boolean, gesture: Boolean): Boolean {
         val scheme = uri.scheme?.lowercase()
         return when (scheme) {
-            "http", "https" -> when {
-                !page.signIn -> false
-                uri.host == platformHost || isLoopback(uri.host) -> false
-                // Server redirects and scripted navigations belong to the sign-in flow itself.
-                redirect || !gesture -> false
-                else -> { Browser.openExternal(context, uri.toString()); true }
-            }
+            // http(s) always stays in this WebView. During sign-in the whole OAuth flow
+            // (DeepSeek platform -> Google / AWS WAF) is bound to this WebView's cookies and to
+            // server-side session ids (Google's signin/oauth/v3/consent?as=...&xsrf=...), so handing
+            // a tapped link to another browser breaks the flow: Google answers 400 malformed.
+            "http", "https" -> false
             APP_SCHEME -> { if (uri.host == "account") account.onSignInReturned(); true }
             "intent" -> { openIntentUrl(context, uri.toString(), account); true }
             "about", "data", "blob", "javascript" -> false
@@ -213,7 +210,9 @@ private fun platformWebView(
                 override fun shouldOverrideUrlLoading(v: WebView, r: WebResourceRequest): Boolean {
                     val u = r.url
                     when (u.scheme?.lowercase()) {
-                        "http", "https" -> Browser.openExternal(context, u.toString())
+                        // A sign-in popup (target=_blank) belongs to the same browser session: load it in
+                        // the main WebView instead of another app, whose cookies it does not have.
+                        "http", "https" -> view.post { runCatching { view.loadUrl(u.toString()) } }
                         "intent" -> openIntentUrl(context, u.toString(), account)
                         APP_SCHEME -> if (u.host == "account") account.onSignInReturned()
                         else -> openOutside(context, Intent(Intent.ACTION_VIEW, u))
