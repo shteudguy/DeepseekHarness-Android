@@ -67,11 +67,27 @@ fun prettyJson(raw: String?): String = raw?.let {
 @Composable
 fun ReasoningRow(b: Block.Reasoning, live: Boolean) {
     var open by rememberSaveable(b.key) { mutableStateOf(false) }
+    val tr = LocalReasoningTranslation.current
+    val translated = tr.values[b.key]
     val preview = remember(b.text) { b.text.lineSequence().map { it.trim().trimStart('#', '*', '-', ' ') }.firstOrNull { it.isNotBlank() } ?: "" }
     Column {
         DisclosureRow(R.drawable.dsw_think_outline, stringResource(R.string.think), preview, open, { open = !open }, live = live)
         ExpandBody(open) {
-            Box(Modifier.padding(start = 22.dp, top = 4.dp, bottom = 4.dp)) { DshMarkdown(b.text, compact = true) }
+            Column(Modifier.padding(start = 22.dp, top = 4.dp, bottom = 4.dp)) {
+                DshMarkdown(b.text, compact = true)
+                translated?.let {
+                    Spacer(Modifier.height(6.dp))
+                    DshMarkdown(it, compact = true)
+                }
+                if (translated == null) {
+                    Text(
+                        stringResource(R.string.translate_thinking),
+                        Modifier.pressable({ tr.request(b.key, b.text) }, Radius.sm).padding(top = 6.dp, bottom = 2.dp),
+                        style = DshType.xxs12,
+                        color = Dsh.colors.labelSecondary,
+                    )
+                }
+            }
         }
     }
 }
