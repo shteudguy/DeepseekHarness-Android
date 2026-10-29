@@ -98,6 +98,8 @@ private fun ConversationPane(vm: HomeViewModel, onMenu: () -> Unit, onSettings: 
     val settings by vm.settings.collectAsStateWithLifecycle()
     val view by vm.view.collectAsStateWithLifecycle()
     val prefill by vm.prefill.collectAsStateWithLifecycle()
+    val translations by vm.translations.collectAsStateWithLifecycle()
+    val uiLanguage = androidx.compose.ui.platform.LocalConfiguration.current.locales[0].toLanguageTag()
     val composer = rememberComposerState(live.sessionId)
     LaunchedEffect(prefill, live.sessionId) {
         if (live.sessionId == vm.id) prefill?.let { composer.text = it; vm.prefill.value = null }
@@ -131,7 +133,11 @@ private fun ConversationPane(vm: HomeViewModel, onMenu: () -> Unit, onSettings: 
                     v == SessionView.Trajectory -> TrajectoryView(vm)
                     isEmpty -> EmptyHero(vm, composer, settings, live, conv, onAutomation)
                     // One list state per session (and per crossfading pane), so positions never leak across sessions.
-                    else -> ChatStream(conv, live, settings.workDetails, rememberLazyListState(), onInspect = vm::inspect, onRetry = vm::retry, onOpenSettings = { onSettings(it) }, modifier = Modifier.fillMaxSize())
+                    else -> CompositionLocalProvider(
+                        LocalReasoningTranslation provides ReasoningTranslationState(translations) { key, text -> vm.translateReasoning(key, text, uiLanguage) },
+                    ) {
+                        ChatStream(conv, live, settings.workDetails, rememberLazyListState(), onInspect = vm::inspect, onRetry = vm::retry, onOpenSettings = { onSettings(it) }, modifier = Modifier.fillMaxSize())
+                    }
                 }
             }
         }
