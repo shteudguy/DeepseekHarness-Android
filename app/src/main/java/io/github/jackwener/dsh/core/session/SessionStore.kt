@@ -213,7 +213,8 @@ class SessionStore @Inject constructor(
     suspend fun sendQueuedNow(sessionId: String, id: String) {
         val q = flowOf(sessionId).value.queue.firstOrNull { it.id == id } ?: return
         mutate(sessionId) { s -> s.copy(queue = s.queue.filterNot { it.id == id }) }
-        prompt(sessionId, q.text)
+        // "Send now" on a queued message means steering the turn that is running right now.
+        prompt(sessionId, q.text, steer = flowOf(sessionId).value.running)
     }
 
     /**
