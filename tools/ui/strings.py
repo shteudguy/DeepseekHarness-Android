@@ -519,6 +519,7 @@ S = [
 ("web_search_needs_key", "需要 DeepSeek API Key", "Needs a DeepSeek API key"),
 ("web_search_off_desc", "当前选用第三方模型。联网搜索由 DeepSeek 提供，需要 DeepSeek API Key；网页读取不受影响。", "A third-party model is selected. Web search is provided by DeepSeek and needs a DeepSeek API key; reading web pages still works."),
 ("rule_missing", "这个自动化任务已不存在", "This automation no longer exists"),
+("translate_thinking", "翻译成中文", "Translate"),
 ]
 def esc(s):
     s = s.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace("'", "\\'").replace('"', '\\"')
