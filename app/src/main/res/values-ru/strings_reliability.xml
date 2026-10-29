@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="allow_external_apps">Разрешить другим приложениям</string>
+    <string name="allow_external_apps_desc">Другие приложения могут просить DSH выполнить задачу через RUN_TASK (содержимое экрана не передаётся). По умолчанию выключено.</string>
+    <string name="external_refused">%1$s попросило DSH выполнить задачу; отказано. Включите Настройки → Основные → Разрешить другим приложениям, чтобы принимать запросы.</string>
+    <string name="external_unknown_app">Другое приложение</string>
+    <string name="err_interrupted_previous">Система остановила приложение во время этого хода. Нажмите «Продолжить», чтобы возобновить с того же места.</string>
+    <string name="err_engine_crash_loop">Движок агента постоянно падает, поэтому автоматическое восстановление приостановлено. Записи о сбоях смотрите в разделе Настройки → О приложении → Диагностика, или нажмите «Продолжить», чтобы повторить.</string>
+    <string name="engine_recovering">Движок неожиданно завершился; перезапускаем и продолжаем…</string>
+    <string name="err_bg_start">Android не разрешил запустить движок в фоне (обычно снова включена оптимизация батареи). Нажмите уведомление, чтобы запустить.</string>
+    <string name="deferred_title">Нажмите, чтобы запустить: %1$s</string>
+    <string name="deferred_text">Android заблокировал запуск в фоне; нажмите, чтобы запустить эту автоматизацию самостоятельно. Режим батареи «Без ограничений» предотвращает это.</string>
+    <string name="takeover_title">Ваш ход</string>
+    <string name="takeover_body">Выполните этот шаг на телефоне сами, затем нажмите «Продолжить».</string>
+    <string name="takeover_notif">Этим экраном нельзя управлять автоматически. Выполните шаг сами, затем вернитесь в DSH и нажмите «Продолжить».</string>
+    <string name="takeover_stop">Остановить</string>
+    <string name="ime_label">Клавиатура DSH</string>
+    <string name="ime_bar">Клавиатура DSH (позволяет агенту печатать) · нажмите, чтобы вернуться к своей клавиатуре</string>
+    <string name="engine_last_exit">Последний выход движка</string>
+    <string name="err_open_doctor">Открыть диагностику</string>
+</resources>
