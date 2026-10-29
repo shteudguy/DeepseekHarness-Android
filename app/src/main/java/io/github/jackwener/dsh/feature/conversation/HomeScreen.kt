@@ -49,6 +49,7 @@ import io.github.jackwener.dsh.core.designsystem.Tag
 import io.github.jackwener.dsh.core.designsystem.Tone
 import io.github.jackwener.dsh.core.designsystem.Whale
 import io.github.jackwener.dsh.core.session.Conversation
+import io.github.jackwener.dsh.core.session.liveTps
 import io.github.jackwener.dsh.core.session.SessionLive
 import io.github.jackwener.dsh.feature.trajectory.TrajectoryView
 import kotlinx.coroutines.launch
@@ -191,7 +192,7 @@ fun ComposerSlot(vm: ConversationController, composer: ComposerState, settings: 
         live.approval != null -> ApprovalCard(live.approval) { vm.approve(live.approval, it) }
         live.question != null -> QuestionCard(live.question, onSubmit = { vm.answer(live.question, it) }, onSkip = { vm.skipQuestion(live.question) })
         else -> Composer(
-            composer, live.running, live.preset, vm::setPreset, settings.choice, settings.providers, settings.effort, vm::setModel, vm::setEffort, conv.contextTokens,
+            composer, live.running, live.preset, vm::setPreset, settings.choice, settings.providers, settings.effort, vm::setModel, vm::setEffort, conv.contextTokens, liveTps = conv.liveTps(System.currentTimeMillis()),
             onSend = {
                 val text = prepare(composer.outgoingText(context))
                 val images = composer.images.map { it.mime to it.base64 }
