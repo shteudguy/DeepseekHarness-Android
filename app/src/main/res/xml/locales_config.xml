@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Per-app language (Android 13+ Settings → App languages; Settings → General → 语言). values/ is zh, values-en is en. -->
+<!-- Per-app language (Android 13+ Settings → App languages; Settings → General → 语言). values/ is zh, values-en is en, values-ru is ru. -->
 <locale-config xmlns:android="http://schemas.android.com/apk/res/android">
     <locale android:name="zh" />
     <locale android:name="en" />
+    <locale android:name="ru" />
 </locale-config>
