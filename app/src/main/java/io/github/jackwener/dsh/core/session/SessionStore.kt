@@ -404,6 +404,16 @@ class SessionStore @Inject constructor(
         engine.sdkIfReady()?.let { sendPreset(it, sessionId, preset) }
     }
 
+    /** Machine translation of one reasoning text through the engine's cot-translation plugin. */
+    suspend fun translateReasoning(sessionId: String, text: String, targetLanguage: String): String? = runCatching {
+        val res = engine.sdk().request("cotTranslation/translate", buildJsonObject {
+            put("text", text)
+            put("targetLanguage", targetLanguage)
+            put("sessionId", sessionId)
+        })
+        (res as? JsonPrimitive)?.content
+    }.onFailure { android.util.Log.w(TAG, "translate: ${it.message}") }.getOrNull()
+
     private suspend fun sendPreset(sdk: JsonRpcPeer, sessionId: String, preset: PermissionPreset) {
         runCatching { sdk.request("android/session/permission", buildJsonObject { put("sessionId", sessionId); put("preset", preset.id) }) }
             .onFailure { android.util.Log.w(TAG, "android/session/permission failed", it) }
