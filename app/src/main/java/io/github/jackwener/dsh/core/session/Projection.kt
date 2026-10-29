@@ -462,3 +462,17 @@ fun Conversation.liveTps(now: Long): Double? {
     if (chars < 8) return null
     return chars / 3.5 / seconds
 }
+
+/**
+ * Output rate of the latest settled turn, in tokens per second, for the composer chip while nothing
+ * is streaming: exact counts (dsh reports them when a model call settles) over the turn's duration.
+ * Stays put when a new turn starts, so the chip does not blank out between turns.
+ */
+fun Conversation.lastTps(): Double? {
+    val turn = turns.lastOrNull {
+        it.status != TurnStatus.Running && it.usage.output > 0 && it.endTime != null && it.endTime!! > it.startTime
+    } ?: return null
+    val seconds = (turn.endTime!! - turn.startTime) / 1000.0
+    if (seconds <= 0.0) return null
+    return turn.usage.output / seconds
+}
