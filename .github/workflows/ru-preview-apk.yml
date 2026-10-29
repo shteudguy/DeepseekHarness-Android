@@ -1,4 +1,4 @@
-# Builds an installable APK with the Russian resources (values-ru).
+# Builds an installable APK with the Russian resources (values-ru) and the TPS chip.
 #
 # Why this exists: the engine bundle and the native libraries are prebuilt artefacts, and a locally
 # built APK is signed with a different key than the release, so it cannot update the installed app.
@@ -33,19 +33,22 @@ jobs:
         with:
           node-version: '24'
 
-      - name: Android SDK
-        uses: android-actions/setup-android@v3
-
-      # compileSdk is 37 (minorApiLevel 2) in app/build.gradle.kts; install whatever exists under that
-      # name and let the fallback pick the closest match.
-      - name: SDK packages
+      # The runner image already ships the Android SDK; android-actions/setup-android is broken with the
+      # current repository (it still tries `sdkmanager tools`), so packages are installed directly.
+      - name: Android SDK packages
         run: |
-          yes | sdkmanager --licenses >/dev/null 2>&1 || true
+          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
+          echo "SDK=$SDK"; ls "$SDK" || true
+          SDKM=$(ls "$SDK"/cmdline-tools/*/bin/sdkmanager 2>/dev/null | head -1)
+          echo "sdkmanager=$SDKM"
+          yes | "$SDKM" --licenses >/dev/null 2>&1 || true
           for pkg in "platforms;android-37.2" "platforms;android-37" \
                      "build-tools;37.0.0" "build-tools;36.1.0" "build-tools;36.0.0" "platform-tools"; do
-            if sdkmanager --install "$pkg" >/dev/null 2>&1; then echo "installed $pkg"; else echo "unavailable: $pkg"; fi
+            if "$SDKM" --install "$pkg" >/dev/null 2>&1; then echo "installed $pkg"; else echo "unavailable: $pkg"; fi
           done
-          sdkmanager --list_installed || true
+          echo '--- installed ---'; "$SDKM" --list_installed || true
+          echo '--- android platforms in repo ---'
+          "$SDKM" --list 2>/dev/null | grep 'platforms;android-3' | tail -25 || true
 
       # libnode.so + JNI wrapper + addons come from this repo's "native-*" release (public, pinned by hash).
       - name: Prebuilt native libraries
