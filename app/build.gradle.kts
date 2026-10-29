@@ -25,6 +25,10 @@ android {
         targetSdk = 36
         versionCode = 8
         versionName = "0.1.7"
+        // Side-by-side preview builds, e.g. -Pdsh.appIdSuffix=ru -Pdsh.versionNameSuffix=ru: the APK installs
+        // next to the store build instead of replacing it (a locally built APK has a different signature).
+        providers.gradleProperty("dsh.appIdSuffix").orNull?.let { applicationIdSuffix = ".$it" }
+        providers.gradleProperty("dsh.versionNameSuffix").orNull?.let { versionNameSuffix = "-$it" }
         ndk { abiFilters += "arm64-v8a" }
         // Bundled official Shizuku APK (in-app install/update); pinned in tools/fetch-shizuku.sh.
         buildConfigField("String", "SHIZUKU_VERSION", "\"${shizukuPin("VERSION")}\"")
