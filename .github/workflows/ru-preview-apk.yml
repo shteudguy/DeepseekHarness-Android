@@ -58,6 +58,14 @@ jobs:
       - name: Engine bundle
         run: OUT_DIR="$PWD/toolchains/out/engine" js/build-engine.sh
 
+      # A fresh debug keystore per run would change the app signature and force an uninstall
+      # between builds; caching it keeps in-place updates working.
+      - name: Persist debug keystore
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: dsh-ru-debug-keystore-v1
+
       - name: Build APK
         run: |
           ./gradlew :app:assembleDebug --stacktrace --no-configuration-cache \
