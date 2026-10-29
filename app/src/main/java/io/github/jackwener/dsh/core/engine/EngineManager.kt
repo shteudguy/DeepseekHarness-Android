@@ -131,7 +131,12 @@ class EngineManager @Inject constructor(
     private fun webSearch(st: io.github.jackwener.dsh.core.data.Settings, hasKey: Boolean) = hasKey || st.choice.isDeepSeek
 
     private fun profilePatch(st: io.github.jackwener.dsh.core.data.Settings, hasKey: Boolean) =
-        renderProfilePatch(st.providers, webSearch(st, hasKey))
+        renderProfilePatch(
+            st.providers,
+            webSearch(st, hasKey),
+            // Durable full-text index for the past-session search tool (built on the first search).
+            File(context.filesDir, "dsh-home/android/sessions.db").path,
+        )
 
     /** Provider keys for the engine environment (env var name → key). */
     private fun providerKeys(st: io.github.jackwener.dsh.core.data.Settings): Map<String, String> =
